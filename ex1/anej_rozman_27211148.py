@@ -5,6 +5,10 @@
 
 
 # O(n) implementation using stack
+# We iterate over a list li and push, pop and update
+# elements from the list res. Those are all O(1) 
+# operations. Every element gets pushed to the stack 
+# only once, so the time complexity of the algorythm is O(n)
 def cowboysR(li):
     '''
     Input: list (int) of heights 
@@ -34,6 +38,8 @@ def cowboysL(li):
     return res
 
 
+# We call our algorythm twice so the time complexity 
+# of duel is also O(n)
 def duel(li):
     L = cowboysL(li)
     R = cowboysR(li)
