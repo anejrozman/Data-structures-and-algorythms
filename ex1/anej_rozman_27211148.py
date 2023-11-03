@@ -3,6 +3,7 @@
 # financna matematika, 3. letnik  
 # Python 3.9.7
 
+
 # O(n) implementation using stack
 def cowboysR(li):
     '''
@@ -32,6 +33,7 @@ def cowboysL(li):
         s.append(i)
     return res
 
+
 def duel(li):
     L = cowboysL(li)
     R = cowboysR(li)
@@ -41,6 +43,7 @@ def duel(li):
 
 
 if __name__ == "__main__":
+    # Read input
     data = input()
 
     # Change data type
