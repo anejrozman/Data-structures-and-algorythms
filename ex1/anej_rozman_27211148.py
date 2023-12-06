@@ -51,7 +51,7 @@ def duel(li):
 if __name__ == "__main__":
     # Read input
     data = input()
-
+    
     # Change data type
     data = data.split(' ')
     data = list(map(int, data))
