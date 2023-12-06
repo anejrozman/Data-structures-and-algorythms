@@ -105,7 +105,7 @@ if __name__ == '__main__':
         python_path = args['pypath']
     if args['test_nb'] is not None:
          test_nb = int(args['test_nb'])
-         run_test("skladisce.py", python_path=python_path, test_nb=test_nb)
+         run_test(script_name, python_path=python_path, test_nb=test_nb)
     else:
         run_tests(script_name, python_path=python_path)
 
