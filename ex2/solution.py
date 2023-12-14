@@ -6,170 +6,294 @@
 import sys
 import heapq
 
+# Da malo zagovarjam casovno zahtevnost, ce je k == 0 potem po grafu s 4N vozlisci pozenemo 
+# Floyd Warshallov algoritem torej O(N³) in po tem poiscemo ustrezne dolzine. 
+# Ce pa je k > 0 pozenemo dijkstraMod, ki je v najslabsem primeru O((k + 1)N³) (ker ga poznenemo 
+# na O(n) vozliscih in pregledamo k + 1 moznosti za posebne povezave).
+# Naloge sem se lotil, da sem resil primere s k = 0 in potem 
+# prilagodil vse za k > 0. Ko pogledam za nazaj je bil to grozen pristop in bi lahko 
+# marsikaj izobljsal, najbolj pa verjetno generiranje in predstavitev grafa.
+
 #------------------------------------------------------------------------------#
 
 def dist(p1, p2):
     '''
-    Input: two points in the form (x, y)
-    Output: distance between points
+    Input: two points in the form (x, y) \n
+    Output: distance between points \n
     TC: O(1)
     '''
     return ((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2) ** 0.5
 
 #------------------------------------------------------------------------------#
 
-def onSegment(p1, p2, p):
+def onSegment(p1, p2, p3): 
     '''
-    Input: three points in the form (x, y)
-    Output: True if p is on line segment p1p2, False otherwise
+    Input: three points in the form (x, y) \n
+    Output: True if p2 is on segment p1p3, False otherwise \n
     TC: O(1)
     '''
-    return min(p1[0], p2[0]) <= p[0] <= max(p1[0], p2[0]) and min(p1[1], p2[1]) <= p[1] <= max(p1[1], p2[1])
-
-#------------------------------------------------------------------------------#
-
-def direction(p1, p2, p3):
-    '''
-    Input: three points in the form (x, y)
-    Output: direction of p3 from line p1p2
-    TC: O(1)
-    '''
-    return (p3[0] - p1[0]) * (p2[1] - p1[1]) - (p2[0] - p1[0]) * (p3[1] - p1[1])
-
-#------------------------------------------------------------------------------#
-
-def intersect(p1, p2, p3, p4):
-    '''
-    Input: two edges in the form (x1, y1), (x2, y2); (x3, y3), (x4, y4)
-    Output: True if edges intersect, False otherwise
-    TC: O(1)
-    '''
-    d1 = direction(p3, p4, p1)
-    d2 = direction(p3, p4, p2)
-    d3 = direction(p1, p2, p3)
-    d4 = direction(p1, p2, p4)
-
-    if ((d1 > 0 and d2 < 0) or (d1 < 0 and d2 > 0)) \
-        and ((d3 > 0 and d4 < 0) or (d3 < 0 and d4 > 0)):
+    if ((p2[0] <= max(p1[0], p3[0])) and (p2[0] >= min(p1[0], p3[0])) and 
+           (p2[1] <= max(p1[1], p3[1])) and (p2[1] >= min(p1[1], p3[1]))): 
         return True
-    elif d1 == 0 and onSegment(p3, p4, p1):
-        return True
-    elif d2 == 0 and onSegment(p3, p4, p2):
-        return True
-    elif d3 == 0 and onSegment(p1, p2, p3):
-        return True
-    elif d4 == 0 and onSegment(p1, p2, p4):
-        return True
-    else:
-        return False
+    return False
     
 #------------------------------------------------------------------------------#
 
-def isEdgeValid(start, end, rectangles, opt=0):
+def orientation(p1, p2, p3): 
     '''
-    Input: start and end coordinates of edge, list of rectangles
-    Output: True if edge passes through <= 1 rectangle, False otherwise
-    TC: O(n), where n is the number of rectangles
-    '''
-    #if intersect(start, end, (0, 0), (0, 100)) or intersect(start, end, (0, 0), (100, 0)) \
-    #    or intersect(start, end, (100, 0), (100, 100)) or intersect(start, end, (0, 100), (100, 100)):
-    #    return False
-    c = 0
-    for rectangle in rectangles:
-        p1, p2, p3, p4 = rectangle
-        if intersect(start, end, p1, p2) or intersect(start, end, p2, p3) \
-        or intersect(start, end, p3, p4) or intersect(start, end, p4, p1):
-            c += 1
-    return c <= opt + 2
+        Input: three points in the form (x, y) \n
+        Output: 0 if p1, p2, p3 are collinear, 1 if clockwise, 2 if counterclockwise \n
+        TC: O(1)
+    '''      
+    val = (float(p2[1] - p1[1]) * (p3[0] - p2[0])) - (float(p2[0] - p1[0]) * (p3[1] - p2[1])) 
+    if val > 0:  # Clockwise orientation 
+        return 1
+    elif val < 0: # Counterclockwise orientation 
+        return 2
+    else: # Collinear orientation 
+        return 0
 
 #------------------------------------------------------------------------------#
 
-def addEdges(v, vertices, rectangles):
+def intersect(p1,q1,p2,q2): 
     '''
-    Input: vertex u in the form (x, y)
-    Output: dictionary of neighbors connected to u with edge weights
+        Input: four points in the form (x, y) \n
+        Output: True if line segments p1q1 and p2q2 intersect, False otherwise \n
+        TC: O(1)
+    '''      
+    # Find the 4 orientations required for  
+    # the general and special cases 
+    o1 = orientation(p1, q1, p2) 
+    o2 = orientation(p1, q1, q2) 
+    o3 = orientation(p2, q2, p1) 
+    o4 = orientation(p2, q2, q1) 
+  
+    # General case 
+    if ((o1 != o2) and (o3 != o4)): 
+        return True
+  
+    # Special Cases 
+    # p1, q1 and p2 are collinear and p2 lies on segment p1q1 
+    if ((o1 == 0) and onSegment(p1, p2, q1)): 
+        return True
+  
+    # p1, q1 and q2 are collinear and q2 lies on segment p1q1 
+    if ((o2 == 0) and onSegment(p1, q2, q1)): 
+        return True
+  
+    # p2, q2 and p1 are collinear and p1 lies on segment p2q2 
+    if ((o3 == 0) and onSegment(p2, p1, q2)): 
+        return True
+  
+    # p2, q2 and q1 are collinear and q1 lies on segment p2q2 
+    if ((o4 == 0) and onSegment(p2, q1, q2)): 
+        return True
+    
+    return False
+
+#------------------------------------------------------------------------------#
+
+def edgeOnRectangle(start, end, rec, opt):
+    '''
+        Input: start and end coordinates of edge, rectangle coordinates, optional parameter \n
+        for number of rectangles edge can pass through \n
+        Output: True if edge is on rectangle, False otherwise
+        TC: O(1)
+    '''
+    # Get rectangle coordinates
+    p1, p2, p3, p4 = rec
+
+    # Check if edge is on the border and on rectangle
+    if (start == p1 and end == p2 and intersect(start, end, (0, 0), (0, 100))) or \
+        (start == p1 and end == p4 and intersect(start, end, (0, 0), (100, 0))) or \
+        (start == p2 and end == p1 and intersect(start, end, (0, 0), (0, 100))) or \
+        (start == p2 and end == p3 and intersect(start, end, (0, 100), (100, 100))) or \
+        (start == p3 and end == p2 and intersect(start, end, (0, 100), (100, 100))) or \
+        (start == p3 and end == p4 and intersect(start, end, (100, 100), (100, 0))) or \
+        (start == p4 and end == p1 and intersect(start, end, (0, 0), (100, 0))) or \
+        (start == p4 and end == p3 and intersect(start, end, (100, 100), (100, 0))):
+        return opt == 1, 1
+    
+    # Check if edge is on rectangle
+    if (start == p1 and (end == p2 or end == p4)) or \
+        (start == p2 and (end == p1 or end == p3)) \
+        or (start == p3 and (end == p2 or end == p4)) \
+        or (start == p4 and (end == p1 or end == p3)):
+        return True, 0
+  
+    # Check if edge is inside rectangle
+    if (start in [p1, p3] and end in [p1, p3]) \
+        or (start in [p2, p4] and end in [p2, p4]):
+        return opt == 1, 1
+    
+#------------------------------------------------------------------------------#
+
+def isEdgeValid(start, end, rectangles, opt):
+    '''
+    Input: start and end coordinates of edge, list of rectangles, optional parameter 
+    for number of rectangles edge can pass through \n
+    Output: True if edge passes through <= opt rectangles, False otherwise \n
     TC: O(n), where n is the number of rectangles
+    '''
+    c = 0
+    for rec in rectangles:
+        # If edge is on rectangle, easy to check
+        if start in rec and end in rec:
+            return edgeOnRectangle(start, end, rec, opt)
+        p1, p2, p3, p4 = rec
+
+        # If one of the points is on rectangle
+        if start in rec or end in rec:
+            c1 = 0
+            if intersect(start, end, p1, p2):
+                c1 += 1
+            if intersect(start, end, p2, p3):
+                c1 += 1
+            if intersect(start, end, p3, p4):
+                c1 += 1
+            if intersect(start, end, p4, p1):
+                c1 += 1
+            if c1 > 2:
+                c += 1
+    
+        # All other cases (points are not on rectangle)
+        elif intersect(start, end, p1, p2) or intersect(start, end, p2, p3) \
+            or intersect(start, end, p3, p4) or intersect(start, end, p4, p1):
+            c += 1
+    return c <= opt, 1 if c > 0 else 0
+   
+#------------------------------------------------------------------------------#
+
+def addEdges(v, vertices, rectangles, opt):
+    '''
+    Input: vertex u in the form (x, y) \n
+    Output: dictionary of neighbors connected to u with edge weights \n
+    TC: O(n²), where n is the number of rectangles
     '''
     neighbors = {}
     for u in vertices:
-        if u != v and isEdgeValid(u, v, rectangles):
-            neighbors[u] = dist(u, v)
+        if u != v:
+            res, special = isEdgeValid(u, v, rectangles, opt)
+            if res:
+                neighbors[u] = (dist(u, v), special)
     return neighbors
 
 #------------------------------------------------------------------------------#
 
 def genGraph(rectangles, k):
     '''
-    Input: Vertices in the form (x, y)
-    Output: dictionary (str -> list (str)) for graph of shelf paths
-    TC = O(n^2), where n is the number of rectangles
+    Input: Vertices in the form (x, y) \n
+    Output: dictionary {(x, y) -> dict} for graph of shelf paths \n
+    TC = O(n³), where n is the number of rectangles
     '''
     G = {}
+    opt = 0 if k == 0 else 1
+
+    # Make list of vertices 
     vertices = [v for rec in rectangles for v in rec]
     vertices.extend([(0, 0), (100, 100)])
+
+    # Add edges
     for v in vertices:
-        G[v] = addEdges(v, vertices, rectangles)
+        G[v] = addEdges(v, vertices, rectangles, opt)
     return G
 
+#------------------------------------------------------------------------------#
+
+def floydWarshall(G):
+    '''
+        Input: graph in form {(x, y) -> dict} \n
+        Output: distance matrix, vertex mapping \n  
+        TC: O(N³)
+    '''
+    vertices = list(G.keys())
+    numVertices = len(vertices)
+    
+    # Distance matrix
+    dist = [[0] * numVertices for _ in range(numVertices)]
+    
+    # Map matrix indices to vertices
+    vertexMap = {vertices[i]: i for i in range(numVertices)}
+
+    # Fill matrix with edge weights
+    for i in range(numVertices):
+        for j in range(numVertices):
+            if i == j:
+                dist[i][j] = 0
+            elif vertices[j] in G[vertices[i]]:
+                dist[i][j] = G[vertices[i]][vertices[j]][0]
+            else:
+                dist[i][j] = float('inf')
+
+    # Floyd-Warshall 
+    for k in range(numVertices):
+        for i in range(numVertices):
+            for j in range(numVertices):
+                if dist[i][j] > dist[i][k] + dist[k][j]:
+                    dist[i][j] = dist[i][k] + dist[k][j]
+
+    return dist, vertexMap
 
 #------------------------------------------------------------------------------#
 
-def dijkstra(G, start):
+def dijkstraMod(G, start, k):
     '''
-        Input: graph in form {str -> list (str)}, start vertex
-        Output: dictionary (str -> float) of distances from start to each vertex
-        TC: O((|V| + |E|)log|V|), where |V| is the number of vertices and |E| is the number of edges
+        Input: graph in form {(x, y) -> dict}, start vertex, max number of special edges \n
+        Output: dictionary ((x, y) -> float) of distances from start to each vertex \n
+        TC: worst case O(N²)
     '''
-    dist = {node: float('inf') for node in G}
-    dist[start] = 0
-    pred = {node: None for node in G}
+    # Initialize distances
+    distances = {node: {k: float('inf') for k in range(round(k + 1))} for node in G}
+    distances[start][0] = 0  
+
+    priorityQ = [(0, 0, start)]  # (distance, numSpecialEdges, node)
     
-    # Priority queue of vertices to visit
-    priorityQ = [(0, start)]
-
     while priorityQ:
-        currentDistance, currentNode = heapq.heappop(priorityQ)
+        currDist, numSpecialEdges, currNode = heapq.heappop(priorityQ)
 
-        # Check if the current path is shorter than the stored distance
-        if currentDistance > dist[currentNode]:
+        # Check if the current path is not the best
+        if currDist > distances[currNode][numSpecialEdges]:
             continue
 
-        for neighbor, weight in G[currentNode].items():
-            distance = currentDistance + weight
+        for neighbor, (weight, isSpecial) in G[currNode].items():
+            newDistance = currDist + weight
+            newSpecialEdges = numSpecialEdges + isSpecial
 
-            # Update the distance and predecessor if a shorter path is found
-            if distance < dist[neighbor]:
-                dist[neighbor] = distance
-                pred[neighbor] = currentNode
-                heapq.heappush(priorityQ, (distance, neighbor))
+            # Update if the new path is better
+            if newSpecialEdges <= k and newDistance < distances[neighbor][newSpecialEdges]:
+                distances[neighbor][newSpecialEdges] = newDistance
+                heapq.heappush(priorityQ, (newDistance, newSpecialEdges, neighbor))
 
-    return dist, pred
-
-#------------------------------------------------------------------------------#
-
-def alg1(item, G):
-    '''
-        Input: item coordinates (x, y), graph G
-        Output: shortest path from (0, 0) to (100, 100) that item is on
-        TC: 2x Dijkstra's algorithm so O((|V| + |E|)log|V|)
-    '''
-    l1, d1 = dijkstra(G, (0, 0))
-    l2, d2 = dijkstra(G, item)
-    return l1[item] + l2[(100, 100)]
+    return distances
 
 #------------------------------------------------------------------------------#
-
 def solve(rectangles, items, k):
-    G = genGraph(rectangles, k)
+    '''
+        Input: list of rectangles, list of items, number of 'tunnelings' k \n
+        Output: shortest path for each item \n
+        TC: if k = 0, O(N³), if k > 0 O((k + 1)N³)
+    '''
+    G = genGraph(rectangles, k) #O(N³)
     out = []
     if k == 0:
+        dist, vertexMap = floydWarshall(G) #O(N³)
         for item in items:
-            out.append(alg1(item, G))
+            out.append(
+                dist[vertexMap[(0, 0)]][vertexMap[item]] +
+                dist[vertexMap[item]][vertexMap[(100, 100)]]
+                )
     else:
-        pass
+        start = dijkstraMod(G, (0, 0), k) #O(N²)
+        for item in items:
+            middle = dijkstraMod(G, item, k)
+            minimum = start[item][0] + middle[(100, 100)][k]
+            for i in range(1, round(k + 1)):
+                if start[item][i] + middle[(100, 100)][k - i] < minimum:
+                    minimum = start[item][i] + middle[(100, 100)][k - i]
+            out.append(minimum) # whole TC: O((k + 1)N³))
     out = '\n'.join(map(str, out))
+    #print(dist)
     print(out)
-
 
 #------------------------------------------------------------------------------#
 
@@ -208,13 +332,3 @@ if __name__ == "__main__":
     solve(rectangles, items, params[2])
 
 
-#rectangle1 = [(5, 5), (5, 15), (15, 15), (15, 5)]
-#rectangle2 = [(20, 10), (20, 20), (30, 20), (30, 10)]
-#rectangle3 = [(35, 5), (35, 15), (45, 15), (45, 5)]
-#
-## Combine all rectangles into a single list
-#all_rectangles = [rectangle1, rectangle2, rectangle3]
-#
-#edgesToVisit = [(5, 15), (30, 20), (45, 15)]
-#
-#solve(all_rectangles, edgesToVisit, 0)
