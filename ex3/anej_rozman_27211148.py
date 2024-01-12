@@ -1,98 +1,139 @@
 import sys
-import networkx as nx
-from networkx.utils import UnionFind
-from itertools import combinations
-from decimal import Decimal, getcontext
 
-#------------------------------------------------------------------------------#
+class Graph:
+    def __init__(self) -> None:
+        self.nodes = None
+        self.edges = None
 
-def kruskal(G):
-    '''
-        Input: graph G \n
-        Output: minimum spanning tree using Kruskal's algorithm. \n
-        TC: O(E log E)
-    '''
-    t = nx.Graph()
-    t.add_nodes_from(G.nodes)
-    
-    edges = sorted(G.edges(data=True), key=lambda x: x[2]['weight'])
-    uf = UnionFind(t.nodes)
+    def addNodes(self, num):
+        self.nodes = list(range(num))
+        self.edges = {i: {} for i in range(num)}
+
+    def addEdge(self, u, v, weight):
+        self.edges[u][v] = weight
+        self.edges[v][u] = weight
+
+    def removeEdge(self, u, v):
+        self.edges[u].pop(v)
+        self.edges[v].pop(u)
+
+    def connectedComponents(self):
+        visited = set()
+        components = []
+
+        def dfs(v, component):
+            visited.add(v)
+            component.add(v)
+
+            for neighbor in self.edges[v]:
+                if neighbor not in visited:
+                    dfs(neighbor, component)
+
+        for v in self.nodes:
+            if v not in visited:
+                component = set()
+                dfs(v, component)
+                components.append(component)
+
+        return components
+
+    def sortedEdges(self, rev):
+        duplicates = set()
+        edgeList = [
+            (u, v, weight)
+            for u in self.edges
+            for v, weight in self.edges[u].items()
+            if frozenset([u, v]) not in duplicates and not duplicates.add(frozenset([u, v]))
+        ]
+
+        return sorted(edgeList, key=lambda x: x[2], reverse=rev)
+
+
+class UnionFind:
+    def __init__(self, n):
+        self.parent = list(range(n))
+        self.rank = [0] * n
+
+    def find(self, x):
+        if self.parent[x] != x:
+            self.parent[x] = self.find(self.parent[x])
+        return self.parent[x]
+
+    def union(self, x, y):
+        rootX = self.find(x)
+        rootY = self.find(y)
+
+        if rootX != rootY:
+            if self.rank[rootX] < self.rank[rootY]:
+                self.parent[rootX] = rootY
+            elif self.rank[rootX] > self.rank[rootY]:
+                self.parent[rootY] = rootX
+            else:
+                self.parent[rootY] = rootX
+                self.rank[rootX] += 1
+
+
+def kruskal(G: Graph):
+    t = Graph()
+    t.addNodes(len(G.nodes))
+
+    edges = G.sortedEdges(False)
+    uf = UnionFind(len(t.nodes))
 
     for u, v, weight in edges:
-        if uf[u] != uf[v]:
-            t.add_edge(u, v, weight=Decimal(str(weight['weight'])))
+        if uf.find(u) != uf.find(v):
+            t.addEdge(u, v, weight)
             uf.union(u, v)
     return t
 
-#------------------------------------------------------------------------------#
 
 def solve(G, K, vertexWeights):
-    '''
-        Input: graph G, integer K, list of vertex weights \n
-        Output: print the number of segments in each cluster and the total weight of each cluster \n
-        TC: O(E log E)
-    '''
-    # Get the minimum spanning tree
     t = kruskal(G)
 
-    # Get the number of components in the minimum spanning tree
-    l = len(list(nx.connected_components(t)))
+    l = len(t.connectedComponents())
 
-    # Check if solution is possible
     if l > K:
         print('-1')
         return
-    
-    # Remove the most expensive edges
-    edges = sorted(t.edges(data=True), 
-                   key=lambda x: x[2]['weight'], 
-                   reverse=True)
-    for e in edges[:K - l]:
-        t.remove_edge(e[0], e[1])
 
-    sol = []
-    
-    # Get the new components of the minimum spanning tree
-    components = list(nx.connected_components(t))
+    edges = t.sortedEdges(True)[:K - l]
+    for u, v, _ in edges:
+        t.removeEdge(u, v)
 
-    # Calculate solution
+    solution = []
+
+    components = t.connectedComponents()
+
     for c in components:
         segmentSize = len(c)
-        segmentWeight = sum(
-            vertexWeights[u] * vertexWeights[v]
-            for u, v in combinations(list(c), 2)
-        )
+
+        s = sum(vertexWeights)
+        segmentWeight = 0
+        for v in c:
+            s -= v
+            segmentWeight += vertexWeights[v] * s
+
         segmentWeight = round(segmentWeight, 4) if segmentWeight != 0 else 0
-        sol.append(f"{segmentSize},{segmentWeight}")
+        solution.append(f"{segmentSize},{segmentWeight}")
 
-    def custom_key(s):
-        parts = s.split(',')
-        return (int(parts[0]), float(parts[1]))
-    
-    sol = sorted(sol, key=custom_key, reverse=True)
+    solution.sort(key=lambda x: (int(x.split(',')[0]), float(x.split(',')[1])), reverse=True)
 
-    print('\n'.join(sol))
+    print('\n'.join(solution))
 
-#------------------------------------------------------------------------------#
 
 if __name__ == "__main__":
-    getcontext().prec = 28 
+    G = Graph()
 
-    # Initialize graph
-    G = nx.Graph()
-
-    # Read input
     inputLines = sys.stdin.readlines()
     for c, line in enumerate(inputLines):
-        line = [Decimal(x) for x in line.strip().split(',')]
+        line = [float(x) for x in line.strip().split(',')]
 
         if c == 0:
-            G.add_nodes_from(range(int(line[0])))
+            G.addNodes(int(line[0]))
             K = int(line[2])
         elif c == 1:
             vertexWeights = line
         else:
-            G.add_edge(int(line[0]), int(line[1]), weight=Decimal(line[2]))
+            G.addEdge(int(line[0]), int(line[1]), weight=line[2])
 
     solve(G, K, vertexWeights)
-
