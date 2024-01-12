@@ -67,12 +67,40 @@ def run_test(script_name, python_path = 'python3', test_nb = 0):
             # Če napake ni, potem izvlečemo rezultat in ga primerjamo z pravilnim
             else:                                          
                 output = stdout#.splitlines()
+                res_lines = result.splitlines()
+                out_lines = result.splitlines()
 
-                # Preverimo, da je rezultat pravilen
-                if result != output:
-                    print(f'Test {test_name} je vrnil napačen odgovor! Čas: {str(elapsed)}')
-                    print(f'Test {test_name} je vrnil: {output}')
-                    print(f'Pravilen odgovor je: {result}')                                        
+                if len(res_lines) != len(out_lines):
+                     print(f'Test {test_name} je vrnil napačen odgovor! Število rezultatov se ne ujema! Čas: {str(elapsed)}')
+                     return
+                
+                for r,o in zip(res_lines, out_lines):
+
+                    ol = list(map(float, o.strip().split(",")))
+                    rl = list(map(float, r.strip().split(",")))
+
+                    if len(rl) == 1 and ol[0] != rl[0]:
+                        print(f'Test {test_name} je vrnil napačen odgovor! Čas: {str(elapsed)}')
+                        print(f'Test {test_name} je vrnil: {ol}')
+                        print(f'Pravilen odgovor je: {rl[0]}')  
+                        return
+                    
+                    elif len(rl) == 2:
+
+                        r1, r2 = list(map(float, r.strip().split(",")))
+                        o1, o2 = list(map(float, o.strip().split(",")))
+
+                        if r1!=o1 or r2 != o2:
+                            print(f'Test {test_name} je vrnil napačen odgovor! Čas: {str(elapsed)}')
+                            print(f'Test {test_name} je vrnil: {o1},{o2}')
+                            print(f'Pravilen odgovor je: {r1},{r2}')  
+                            return  
+
+                # # Preverimo, da je rezultat pravilen
+                # if result != output:
+                #     print(f'Test {test_name} je vrnil napačen odgovor! Čas: {str(elapsed)}')
+                #     print(f'Test {test_name} je vrnil: {output}')
+                #     print(f'Pravilen odgovor je: {result}')                                        
                 
                 else:
                     print(f'Test {test_name} uspešen. Čas: {str(round(elapsed, 3))} sekunde.')

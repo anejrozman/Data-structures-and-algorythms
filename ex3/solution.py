@@ -5,9 +5,9 @@
 
 
 import sys
-from itertools import combinations
 import networkx as nx
 from networkx.utils import UnionFind
+from itertools import combinations
 
 #------------------------------------------------------------------------------#
 
@@ -27,7 +27,6 @@ def kruskal(G):
         if uf[u] != uf[v]:
             t.add_edge(u, v, weight=weight['weight'])
             uf.union(u, v)
-
     return t
 
 #------------------------------------------------------------------------------#
@@ -43,14 +42,16 @@ def solve(G, K, vertexWeights):
 
     # Get the number of components in the minimum spanning tree
     l = len(list(nx.connected_components(t)))
+
+    # Check if solution is possible
     if l > K:
         print('-1')
         return
     
+    # Remove the most expensive edges
     edges = sorted(t.edges(data=True), 
                    key=lambda x: x[2]['weight'], 
                    reverse=True)
-    
     for e in edges[:K - l]:
         t.remove_edge(e[0], e[1])
 
@@ -58,6 +59,8 @@ def solve(G, K, vertexWeights):
     
     # Get the new components of the minimum spanning tree
     components = list(nx.connected_components(t))
+
+    # Calculate solution
     for c in components:
         segmentSize = len(c)
         segmentWeight = sum(vertexWeights[u] * vertexWeights[v] for u, v in combinations(list(c), 2))
@@ -80,7 +83,8 @@ if __name__ == "__main__":
     G = nx.Graph()
 
     # Read input
-    for c, line in enumerate(sys.stdin):
+    inputLines = sys.stdin.readlines()
+    for c, line in enumerate(inputLines):
         line = [float(x) for x in line.strip().split(',')]
 
         if c == 0:
