@@ -8,6 +8,8 @@ import sys
 
 #------------------------------------------------------------------------------#
 
+# Implementation of a graph data structure similar to networx
+
 class Graph:
 
     def __init__(self) -> None:
