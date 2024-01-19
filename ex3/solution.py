@@ -6,6 +6,12 @@
 
 import sys
 
+# Po veckratnem podrobnem pregledu funckij menim da je casovna zahtevnost pod mejo v navodilih. Ampak
+# vecji primeri se vedno porabijo prevec casa za izvajanje. Upam da nisem naredil napake. Verjamem 
+# pa, da bi lahko marsikaj izboljsal, saj sem naknadno implementiral grafe, da nadomestim knjiznjico 
+# networx. V prihodnosti bi predlagal da v navodila podate priblizno koliko casa naj bi vzeli 
+# primeri (vecji in manjsi).
+
 #------------------------------------------------------------------------------#
 
 # Implementation of a graph data structure similar to networx
@@ -16,19 +22,19 @@ class Graph:
         self.nodes = None
         self.edges = None
 
-    def addNodes(self, num):
+    def addNodes(self, num): 
         self.nodes = [i for i in range(num)]
         self.edges = {i:{} for i in range(num)}
 
-    def addEdge(self, u, v, weight):
+    def addEdge(self, u, v, weight):   # O(1)
         self.edges[u][v] = weight
         self.edges[v][u] = weight
             
-    def removeEdge(self, u, v):
+    def removeEdge(self, u, v): # O(1)
         del self.edges[u][v]
         del self.edges[v][u]
 
-    def connectedComponents(self):
+    def connectedComponents(self): # O(V + E)
         visited = set()
         components = []
 
@@ -48,7 +54,7 @@ class Graph:
 
         return components
     
-    def sortedEdges(self, rev):
+    def sortedEdges(self, rev): # O(E log E)
         duplicates = set()
         edgeList = []
         for u in self.edges:
@@ -64,7 +70,7 @@ class Graph:
     
 class UnionFind:
 
-    def __init__(self, n):
+    def __init__(self, n): 
         self.parent = [i for i in range(n)]
         self.rank = [0] * n
 
