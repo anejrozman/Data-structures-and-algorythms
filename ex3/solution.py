@@ -25,8 +25,8 @@ class Graph:
         self.edges[v][u] = weight
             
     def removeEdge(self, u, v):
-        self.edges[u].pop(v)
-        self.edges[v].pop(u)
+        del self.edges[u][v]
+        del self.edges[v][u]
 
     def connectedComponents(self):
         visited = set()
@@ -138,8 +138,8 @@ def solve(G, K, vertexWeights):
     # Calculate solution
     for c in components:
         segmentSize = len(c)
-
         s = sum(vertexWeights)
+
         segmentWeight = 0
         for v in c:
             s -= v
