@@ -5,31 +5,24 @@
 
 import sys
 
-
-
 #------------------------------------------------------------------------------#
 
-def solve(neki):
-    pass
+def solve(s):
+    if len(s) == 0:
+        return 0
+    res = 9 if s[0] == '*' else 1
+    prev = s[0]
+    for i in range(1, len(s)):
 
-
-
-
+        prev = s[i]
+        
+    print(res % (10^9 + 7))
 
 #------------------------------------------------------------------------------#
 
 if __name__ == "__main__":
 
     # Read input
-    inputLines = sys.stdin.readlines()
-    for c, line in enumerate(inputLines):
-        line = [float(x) for x in line.strip().split(',')] 
-
-        if c == 0:
-            pass
-        elif c == 1:
-            pass
-        else:
-            pass
-
-    solve(smt)
+    s = sys.stdin.read()
+    
+    solve(s)
